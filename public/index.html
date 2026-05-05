@@ -66,6 +66,13 @@
       min-height: 1.2em;
     }
     .error { color: #ef5350; }
+    .info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-top: 0.3rem;
+    }
     @media (max-width: 480px) {
       .container { padding: 1rem; }
       h1 { font-size: 1.2rem; }
@@ -80,6 +87,10 @@
   <div class="container">
     <h1>EasyPaste</h1>
     <textarea id="content" placeholder="加载中..."></textarea>
+    <div class="info">
+      <span id="stats">0 字 · 0 行</span>
+      <span id="updatedAt"></span>
+    </div>
     <div class="actions">
       <button id="saveBtn">保存</button>
       <button id="copyBtn">复制</button>
@@ -94,6 +105,8 @@
     const copyBtn = document.getElementById('copyBtn');
     const clearBtn = document.getElementById('clearBtn');
     const msgEl = document.getElementById('msg');
+    const statsEl = document.getElementById('stats');
+    const updatedAtEl = document.getElementById('updatedAt');
 
     // 从 URL 提取 secret: ?secret=xxx 或 /clip/xxx
     const urlParams = new URLSearchParams(window.location.search);
@@ -114,6 +127,22 @@
       if (!isError) setTimeout(() => { msgEl.textContent = ''; }, 3000);
     }
 
+    function updateStats() {
+      const text = contentEl.value;
+      const chars = text.length;
+      const lines = text ? text.split('\n').length : 0;
+      statsEl.textContent = chars + ' 字 · ' + lines + ' 行';
+    }
+
+    function formatTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    contentEl.addEventListener('input', updateStats);
+
     // 加载内容
     async function load() {
       if (!secret) return;
@@ -132,6 +161,8 @@
         }
         const data = await res.json();
         contentEl.value = data.content || '';
+        updateStats();
+        if (data.updatedAt) updatedAtEl.textContent = '上次保存: ' + formatTime(data.updatedAt);
       } catch (e) {
         showMsg('加载失败', true);
       } finally {
@@ -158,6 +189,7 @@
           showMsg('保存失败: HTTP ' + res.status, true);
         } else {
           showMsg('已保存');
+          updatedAtEl.textContent = '上次保存: ' + formatTime(new Date().toISOString());
         }
       } catch (e) {
         showMsg('保存失败', true);
@@ -188,6 +220,14 @@
         e.preventDefault();
         if (secret) saveBtn.click();
       }
+    });
+
+    // 粘贴时自动保存
+    contentEl.addEventListener('paste', () => {
+      setTimeout(() => {
+        updateStats();
+        if (secret) saveBtn.click();
+      }, 100);
     });
 
     load();

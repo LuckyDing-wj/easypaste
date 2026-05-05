@@ -16,7 +16,8 @@ export async function onRequestPost(context) {
       });
     }
 
-    await context.env.CLIP_KV.put("clipboard", content);
+    const data = JSON.stringify({ content, updatedAt: new Date().toISOString() });
+    await context.env.CLIP_KV.put("clipboard", data);
     return new Response(JSON.stringify({ ok: true }), {
       headers: { "Content-Type": "application/json" },
     });

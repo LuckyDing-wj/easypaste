@@ -6,8 +6,21 @@ export async function onRequest(context) {
   }
 
   try {
-    const content = (await context.env.CLIP_KV.get("clipboard")) || "";
-    return new Response(JSON.stringify({ content }), {
+    const raw = await context.env.CLIP_KV.get("clipboard");
+    let content = "";
+    let updatedAt = null;
+
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        content = data.content || "";
+        updatedAt = data.updatedAt || null;
+      } catch {
+        content = raw;
+      }
+    }
+
+    return new Response(JSON.stringify({ content, updatedAt }), {
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
   } catch (e) {
