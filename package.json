@@ -1,0 +1,7 @@
+{
+  "name": "easypaste",
+  "private": true,
+  "scripts": {
+    "dev": "npx wrangler pages dev public --kv CLIP_KV"
+  }
+}
