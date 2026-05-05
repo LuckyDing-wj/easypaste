@@ -60,6 +60,7 @@
     }
     button:hover { background: #ffe082; }
     button:active { background: #f9a825; }
+    button.saved { background: #4caf50; color: #fff; }
     .msg {
       font-size: 0.9rem;
       color: #fff176;
@@ -73,6 +74,19 @@
       color: #aaa;
       margin-top: 0.3rem;
     }
+    .saved { color: #4caf50; }
+    .unsaved { color: #ff9800; }
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #2d2d2d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      font-size: 1.2rem;
+      color: #ffd600;
+    }
     @media (max-width: 480px) {
       .container { padding: 1rem; }
       h1 { font-size: 1.2rem; }
@@ -84,6 +98,7 @@
   </style>
 </head>
 <body>
+  <div class="loading-overlay" id="loadingOverlay">加载中...</div>
   <div class="container">
     <h1>EasyPaste</h1>
     <textarea id="content" placeholder="加载中..."></textarea>
@@ -107,6 +122,7 @@
     const msgEl = document.getElementById('msg');
     const statsEl = document.getElementById('stats');
     const updatedAtEl = document.getElementById('updatedAt');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
     // 从 URL 提取 secret: ?secret=xxx 或 /clip/xxx
     const urlParams = new URLSearchParams(window.location.search);
@@ -119,7 +135,11 @@
       copyBtn.disabled = true;
       clearBtn.disabled = true;
       contentEl.placeholder = '请通过正确的链接访问';
+      loadingOverlay.style.display = 'none';
     }
+
+    let lastSaved = '';
+    let unsavedTimer = null;
 
     function showMsg(text, isError = false) {
       msgEl.textContent = text;
@@ -134,6 +154,24 @@
       statsEl.textContent = chars + ' 字 · ' + lines + ' 行';
     }
 
+    function markUnsaved() {
+      if (contentEl.value === lastSaved) {
+        updatedAtEl.className = 'saved';
+        updatedAtEl.textContent = updatedAtEl.dataset.time || '';
+        return;
+      }
+      updatedAtEl.className = 'unsaved';
+      updatedAtEl.textContent = '未保存';
+    }
+
+    function markSaved(time) {
+      lastSaved = contentEl.value;
+      updatedAtEl.className = 'saved';
+      const text = '上次保存: ' + formatTime(time);
+      updatedAtEl.textContent = text;
+      updatedAtEl.dataset.time = text;
+    }
+
     function formatTime(iso) {
       if (!iso) return '';
       const d = new Date(iso);
@@ -141,12 +179,15 @@
       return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
-    contentEl.addEventListener('input', updateStats);
+    contentEl.addEventListener('input', () => {
+      updateStats();
+      clearTimeout(unsavedTimer);
+      unsavedTimer = setTimeout(markUnsaved, 300);
+    });
 
     // 加载内容
     async function load() {
       if (!secret) return;
-      contentEl.placeholder = '加载中...';
       try {
         const res = await fetch('/api/get', {
           headers: { 'X-Clip-Secret': secret }
@@ -161,18 +202,22 @@
         }
         const data = await res.json();
         contentEl.value = data.content || '';
+        lastSaved = contentEl.value;
         updateStats();
-        if (data.updatedAt) updatedAtEl.textContent = '上次保存: ' + formatTime(data.updatedAt);
+        if (data.updatedAt) markSaved(data.updatedAt);
       } catch (e) {
         showMsg('加载失败', true);
       } finally {
         contentEl.placeholder = '在此粘贴内容...';
+        loadingOverlay.style.display = 'none';
       }
     }
 
     // 保存
+    let saving = false;
     saveBtn.addEventListener('click', async () => {
-      if (!secret) return;
+      if (!secret || saving) return;
+      saving = true;
       saveBtn.disabled = true;
       try {
         const res = await fetch('/api/set', {
@@ -189,12 +234,15 @@
           showMsg('保存失败: HTTP ' + res.status, true);
         } else {
           showMsg('已保存');
-          updatedAtEl.textContent = '上次保存: ' + formatTime(new Date().toISOString());
+          saveBtn.classList.add('saved');
+          setTimeout(() => saveBtn.classList.remove('saved'), 1000);
+          markSaved(new Date().toISOString());
         }
       } catch (e) {
         showMsg('保存失败', true);
       } finally {
         saveBtn.disabled = false;
+        saving = false;
       }
     });
 
@@ -212,6 +260,8 @@
     clearBtn.addEventListener('click', () => {
       contentEl.value = '';
       contentEl.focus();
+      updateStats();
+      markUnsaved();
     });
 
     // Ctrl+S 保存
@@ -222,12 +272,14 @@
       }
     });
 
-    // 粘贴时自动保存
+    // 粘贴自动保存（防抖）
+    let pasteTimer = null;
     contentEl.addEventListener('paste', () => {
-      setTimeout(() => {
+      clearTimeout(pasteTimer);
+      pasteTimer = setTimeout(() => {
         updateStats();
         if (secret) saveBtn.click();
-      }, 100);
+      }, 300);
     });
 
     load();
