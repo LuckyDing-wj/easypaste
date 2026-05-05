@@ -95,9 +95,10 @@
     const clearBtn = document.getElementById('clearBtn');
     const msgEl = document.getElementById('msg');
 
-    // 从 URL 提取 secret: /clip/{secret}
+    // 从 URL 提取 secret: ?secret=xxx 或 /clip/xxx
+    const urlParams = new URLSearchParams(window.location.search);
     const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const secret = pathParts.length >= 2 && pathParts[0] === 'clip' ? pathParts[1] : null;
+    const secret = urlParams.get('secret') || (pathParts.length >= 2 && pathParts[0] === 'clip' ? pathParts[1] : null);
 
     if (!secret) {
       contentEl.disabled = true;
