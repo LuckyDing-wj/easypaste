@@ -5,90 +5,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EasyPaste</title>
   <style>
+    :root {
+      --page: #f5f7f8;
+      --surface: #ffffff;
+      --surface-muted: #eef4f2;
+      --text: #14211d;
+      --muted: #66736f;
+      --border: #d8e2df;
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --primary-active: #134e4a;
+      --primary-soft: rgba(15, 118, 110, 0.12);
+      --success: #16803c;
+      --warning: #b45309;
+      --danger: #b42318;
+      --danger-soft: #fff1ee;
+      --shadow: 0 18px 48px rgba(20, 33, 29, 0.10);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #2d2d2d;
-      color: #ffd600;
-      font-family: 'Courier New', monospace;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.10), transparent 38%),
+        var(--page);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .container {
-      width: 80%;
       padding: 2rem;
     }
+    .container {
+      width: min(960px, calc(100vw - 4rem));
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+    }
     h1 {
-      font-size: 1.5rem;
+      font-size: 1.35rem;
+      line-height: 1.2;
       margin-bottom: 1rem;
-      color: #ffe082;
+      color: var(--text);
+      font-weight: 700;
     }
     textarea {
       width: 100%;
       height: 60vh;
-      background: #1e1e1e;
-      color: #ffd600;
-      border: 1px solid #ffd600;
-      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       padding: 1rem;
-      font-family: 'Courier New', monospace;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
       font-size: 1rem;
+      line-height: 1.6;
       resize: vertical;
       outline: none;
+      box-shadow: inset 0 1px 2px rgba(20, 33, 29, 0.04);
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    textarea::placeholder {
+      color: #8a9692;
     }
     textarea:focus {
-      border-color: #ffe082;
-      box-shadow: 0 0 5px rgba(255, 214, 0, 0.3);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-soft), inset 0 1px 2px rgba(20, 33, 29, 0.04);
     }
     .actions {
       margin-top: 1rem;
       display: flex;
-      gap: 0.5rem;
+      gap: 0.625rem;
       align-items: center;
     }
     button {
-      background: #ffd600;
-      color: #1e1e1e;
-      border: none;
-      padding: 0.6rem 1.5rem;
-      font-size: 1rem;
-      font-family: 'Courier New', monospace;
-      border-radius: 4px;
+      min-height: 44px;
+      background: var(--surface-muted);
+      color: var(--text);
+      border: 1px solid transparent;
+      padding: 0.65rem 1.35rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 650;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
     }
-    button:hover { background: #ffe082; }
-    button:active { background: #f9a825; }
-    button.saved { background: #4caf50; color: #fff; }
+    #saveBtn {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    #saveBtn:hover { background: var(--primary-hover); }
+    #saveBtn:active { background: var(--primary-active); }
+    button:hover {
+      background: #e3ece8;
+      border-color: #c8d6d2;
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+    button:focus-visible {
+      outline: 3px solid var(--primary-soft);
+      outline-offset: 2px;
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+    }
+    #clearBtn:hover {
+      background: var(--danger-soft);
+      border-color: #f4b4ad;
+      color: var(--danger);
+    }
+    button.saved { background: var(--success); color: #fff; }
     .msg {
       font-size: 0.9rem;
-      color: #fff176;
+      color: var(--success);
       min-height: 1.2em;
     }
-    .error { color: #ef5350; }
+    .error { color: var(--danger); }
     .info {
       display: flex;
       justify-content: space-between;
       font-size: 0.8rem;
-      color: #aaa;
-      margin-top: 0.3rem;
+      color: var(--muted);
+      margin-top: 0.45rem;
     }
-    .saved { color: #4caf50; }
-    .unsaved { color: #ff9800; }
+    .saved { color: var(--success); }
+    .unsaved { color: var(--warning); }
     .loading-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: #2d2d2d;
+      background: var(--page);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 999;
       font-size: 1.2rem;
-      color: #ffd600;
+      color: var(--primary);
     }
     @media (max-width: 480px) {
-      .container { padding: 1rem; }
+      body { padding: 1rem; }
+      .container { width: calc(100vw - 2rem); padding: 1rem; border-radius: 10px; }
       h1 { font-size: 1.2rem; }
       textarea { height: 50vh; font-size: 16px; }
       .actions { flex-wrap: wrap; }
