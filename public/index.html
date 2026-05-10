@@ -4,29 +4,79 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EasyPaste</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('themeMode') || 'system';
+    } catch (e) {
+      document.documentElement.dataset.theme = 'system';
+    }
+  </script>
   <style>
     :root {
-      --page: #f5f7f8;
-      --surface: #ffffff;
-      --surface-muted: #eef4f2;
-      --text: #14211d;
-      --muted: #66736f;
-      --border: #d8e2df;
-      --primary: #0f766e;
-      --primary-hover: #115e59;
-      --primary-active: #134e4a;
-      --primary-soft: rgba(15, 118, 110, 0.12);
-      --success: #16803c;
+      color-scheme: light;
+      --page: #faf9f5;
+      --surface: #faf9f5;
+      --surface-raised: #fffdf8;
+      --surface-muted: #f0eee6;
+      --text: #141413;
+      --muted: #73726c;
+      --border: #dedcd1;
+      --primary: #c96442;
+      --primary-hover: #b65333;
+      --primary-active: #9f452a;
+      --primary-soft: rgba(201, 100, 66, 0.16);
+      --on-primary: #141413;
+      --success: #629987;
       --warning: #b45309;
-      --danger: #b42318;
-      --danger-soft: #fff1ee;
+      --danger: #b53333;
+      --danger-soft: #f3dbcf;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #141413;
+      --surface: #141413;
+      --surface-raised: #1f1e1d;
+      --surface-muted: #262624;
+      --text: #faf9f5;
+      --muted: #b0aea5;
+      --border: #3d3d3a;
+      --primary: #d97757;
+      --primary-hover: #e08a6e;
+      --primary-active: #c46849;
+      --primary-soft: rgba(217, 119, 87, 0.20);
+      --on-primary: #141413;
+      --success: #7ab49f;
+      --warning: #e3b65e;
+      --danger: #df6666;
+      --danger-soft: rgba(181, 51, 51, 0.18);
+    }
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="system"] {
+        color-scheme: dark;
+        --page: #141413;
+        --surface: #141413;
+        --surface-raised: #1f1e1d;
+        --surface-muted: #262624;
+        --text: #faf9f5;
+        --muted: #b0aea5;
+        --border: #3d3d3a;
+        --primary: #d97757;
+        --primary-hover: #e08a6e;
+        --primary-active: #c46849;
+        --primary-soft: rgba(217, 119, 87, 0.20);
+        --on-primary: #141413;
+        --success: #7ab49f;
+        --warning: #e3b65e;
+        --danger: #df6666;
+        --danger-soft: rgba(181, 51, 51, 0.18);
+      }
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html {
       min-height: 100%;
     }
     body {
-      background: var(--surface);
+      background: var(--page);
       color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       min-height: 100vh;
@@ -39,23 +89,58 @@
       width: 100%;
       min-height: 100vh;
       min-height: max(100vh, 100dvh);
-      background: var(--surface);
+      background: var(--page);
       padding: clamp(1rem, 2vw, 2rem);
       display: flex;
       flex-direction: column;
     }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
     h1 {
       font-size: 1.35rem;
       line-height: 1.2;
-      margin-bottom: 1rem;
       color: var(--text);
       font-weight: 700;
+    }
+    .theme-switcher {
+      display: inline-flex;
+      gap: 0.25rem;
+      align-items: center;
+      padding: 0.25rem;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .theme-option {
+      min-height: 36px;
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 0.85rem;
+      border-color: transparent;
+    }
+    .theme-option:hover {
+      background: var(--surface-raised);
+      color: var(--text);
+      border-color: transparent;
+    }
+    .theme-option[aria-pressed="true"] {
+      background: var(--surface-raised);
+      color: var(--text);
+      border-color: var(--border);
+      box-shadow: 0 1px 2px rgba(20, 20, 19, 0.08);
     }
     textarea {
       width: 100%;
       flex: 1 1 auto;
       min-height: 16rem;
-      background: var(--surface);
+      background: var(--surface-raised);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -69,7 +154,7 @@
       transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
     }
     textarea::placeholder {
-      color: #8a9692;
+      color: var(--muted);
     }
     textarea:focus {
       border-color: var(--primary);
@@ -96,13 +181,13 @@
     }
     #saveBtn {
       background: var(--primary);
-      color: #ffffff;
+      color: var(--on-primary);
     }
     #saveBtn:hover { background: var(--primary-hover); }
     #saveBtn:active { background: var(--primary-active); }
     button:hover {
-      background: #e3ece8;
-      border-color: #c8d6d2;
+      background: var(--surface-raised);
+      border-color: var(--border);
     }
     button:active {
       transform: translateY(1px);
@@ -118,7 +203,7 @@
     }
     #clearBtn:hover {
       background: var(--danger-soft);
-      border-color: #f4b4ad;
+      border-color: var(--danger);
       color: var(--danger);
     }
     button.saved { background: var(--success); color: #fff; }
@@ -150,6 +235,13 @@
     }
     @media (max-width: 480px) {
       .container { padding: 1rem; }
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .theme-switcher { width: 100%; }
+      .theme-option { flex: 1; padding-inline: 0.5rem; }
       h1 { font-size: 1.2rem; }
       textarea { font-size: 16px; }
       .actions { flex-wrap: wrap; }
@@ -161,7 +253,14 @@
 <body>
   <div class="loading-overlay" id="loadingOverlay">加载中...</div>
   <div class="container">
-    <h1>EasyPaste</h1>
+    <div class="topbar">
+      <h1>EasyPaste</h1>
+      <div class="theme-switcher" role="group" aria-label="主题模式">
+        <button class="theme-option" type="button" data-theme-option="system" aria-pressed="true">跟随系统</button>
+        <button class="theme-option" type="button" data-theme-option="light" aria-pressed="false">日间</button>
+        <button class="theme-option" type="button" data-theme-option="dark" aria-pressed="false">夜间</button>
+      </div>
+    </div>
     <textarea id="content" placeholder="加载中..."></textarea>
     <div class="info">
       <span id="stats">0 字 · 0 行</span>
@@ -184,6 +283,36 @@
     const statsEl = document.getElementById('stats');
     const updatedAtEl = document.getElementById('updatedAt');
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const themeButtons = Array.from(document.querySelectorAll('[data-theme-option]'));
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function getThemeMode() {
+      try {
+        return localStorage.getItem('themeMode') || 'system';
+      } catch (e) {
+        return 'system';
+      }
+    }
+
+    function applyTheme(mode) {
+      document.documentElement.dataset.theme = mode;
+      try {
+        localStorage.setItem('themeMode', mode);
+      } catch (e) {}
+      themeButtons.forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.themeOption === mode));
+      });
+    }
+
+    themeButtons.forEach(button => {
+      button.addEventListener('click', () => applyTheme(button.dataset.themeOption));
+    });
+
+    systemTheme.addEventListener('change', () => {
+      if (getThemeMode() === 'system') applyTheme('system');
+    });
+
+    applyTheme(getThemeMode());
 
     // 从 URL 提取 secret: ?secret=xxx 或 /clip/xxx
     const urlParams = new URLSearchParams(window.location.search);
