@@ -7,7 +7,7 @@
 - 收藏一个链接，打开就能粘贴和读取文本内容
 - 换个设备打开同一个链接，也能看到之前保存的内容
 - 每次保存会覆盖之前的内容（只保留最新的一条）
-- 浅色纸面风格，青绿色主操作，长时间编辑更耐看
+- 浅色纸面风格，暖橙色主操作，长时间编辑更耐看
 - 支持 Ctrl+S 快捷保存
 
 ## 项目里有什么文件
@@ -17,13 +17,13 @@ easypaste/
 ├── public/                    # 网页文件（Cloudflare 会自动托管这个文件夹）
 │   ├── index.html             # 网页界面（你看到的页面）
 │   ├── _redirects             # 告诉 Cloudflare 把 /clip/* 请求都指向 index.html
-│   ├── _routes.json           # 告诉 Cloudflare 哪些请求需要走后端 API
 │   └── _headers               # 安全设置（防止别人嵌入你的页面等）
 ├── functions/                 # 后端 API（Cloudflare 自动运行）
 │   └── api/
 │       ├── get.js             # 读取剪切板内容的接口
 │       └── set.js             # 保存剪切板内容的接口
 ├── package.json               # 项目信息
+├── package-lock.json          # npm 锁文件
 ├── wrangler.toml              # Cloudflare 配置文件
 └── README.md                  # 你现在看的这个文件
 ```
@@ -110,6 +110,8 @@ Pages 是 Cloudflare 提供的免费网站托管服务。
    例如：`https://easypaste.pages.dev/clip/550e8400-e29b-41d4-a716-446655440000`
 
 2. **收藏这个链接**，以后直接打开就能用
+
+   链接里的 UUID 是访问密钥，会和环境变量 `CLIP_SECRET` 校验。当前项目是一个部署实例共用一个剪切板，每次保存都会覆盖 KV 里的最新内容。
 
 3. 打开后你可以：
    - 在文本框里粘贴内容

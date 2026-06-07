@@ -3,8 +3,5 @@
   "private": true,
   "scripts": {
     "dev": "npx wrangler pages dev public --kv CLIP_KV"
-  },
-  "dependencies": {
-    "crypto-js": "^4.2.0"
   }
 }
