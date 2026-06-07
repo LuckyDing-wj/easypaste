@@ -6,6 +6,7 @@
 
 - 收藏一个链接，打开就能粘贴和读取文本内容
 - 换个设备打开同一个链接，也能看到之前保存的内容
+- 打开页面后需要输入访问码，验证通过才会加载内容
 - 每次保存会覆盖之前的内容（只保留最新的一条）
 - 浅色纸面风格，暖橙色主操作，长时间编辑更耐看
 - 支持 Ctrl+S 快捷保存
@@ -82,7 +83,7 @@ Pages 是 Cloudflare 提供的免费网站托管服务。
    - **KV namespace**：选择刚才创建的 `easypaste-kv`
 7. 点击 **Save**
 
-### 第五步：设置密钥环境变量
+### 第五步：设置环境变量
 
 1. 还是在 **Settings** 页面
 2. 点击左侧的 **Environment variables**
@@ -91,7 +92,11 @@ Pages 是 Cloudflare 提供的免费网站托管服务。
    - **Variable name**：`CLIP_SECRET`（必须是这个名字）
    - **Value**：填一个 UUID，可以用这个网站生成 https://www.uuidgenerator.net/ （格式类似 `550e8400-e29b-41d4-a716-446655440000`）
    - **Encrypt**：建议勾上（加密保存，更安全）
-5. 点击 **Save**
+5. 再点击 **Add variable**，继续添加访问码：
+   - **Variable name**：`CLIP_CODE`（必须是这个名字）
+   - **Value**：填你自己记得住的访问码
+   - **Encrypt**：建议勾上
+6. 点击 **Save**
 
 ### 第六步：重新部署
 
@@ -114,6 +119,7 @@ Pages 是 Cloudflare 提供的免费网站托管服务。
    链接里的 UUID 是访问密钥，会和环境变量 `CLIP_SECRET` 校验。当前项目是一个部署实例共用一个剪切板，每次保存都会覆盖 KV 里的最新内容。
 
 3. 打开后你可以：
+   - 先输入环境变量 `CLIP_CODE` 里设置的访问码
    - 在文本框里粘贴内容
    - 点击 **保存**（或按 Ctrl+S）保存内容
    - 点击 **复制** 把内容复制到剪切板
@@ -154,7 +160,7 @@ A：检查你的链接格式是否正确，必须是 `https://域名/clip/你的
 A：检查 KV 绑定是否正确。Variable name 必须是 `CLIP_KV`，KV namespace 必须选择 `easypaste-kv`。
 
 **Q：显示"密钥无效"？**
-A：检查环境变量 `CLIP_SECRET` 是否设置正确，链接里的 UUID 是否和环境变量里的一致。
+A：检查环境变量 `CLIP_SECRET` 是否设置正确，链接里的 UUID 是否和环境变量里的一致；同时检查 `CLIP_CODE` 是否和页面里输入的访问码一致。
 
 **Q：部署一直失败？**
 A：检查 Build output directory 是否填的是 `public`。

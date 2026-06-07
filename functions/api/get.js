@@ -1,7 +1,8 @@
 export async function onRequest(context) {
   const secret = context.request.headers.get("X-Clip-Secret");
+  const code = context.request.headers.get("X-Clip-Code");
 
-  if (!secret || secret !== context.env.CLIP_SECRET) {
+  if (!secret || !code || secret !== context.env.CLIP_SECRET || code !== context.env.CLIP_CODE) {
     return new Response("Forbidden", { status: 403 });
   }
 
