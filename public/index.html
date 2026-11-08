@@ -421,7 +421,15 @@
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const secret = urlParams.get('secret') || (pathParts.length >= 2 && pathParts[0] === 'clip' ? pathParts[1] : null);
 
-    let accessCode = '';
+    let everLoaded = false; // 是否成功加载过内容（用于过期重解锁时不覆盖未保存的编辑）
+
+    function showUnlock(message) {
+      unlockPanel.hidden = false;
+      editorPanel.hidden = true;
+      unlockMsgEl.textContent = message || '';
+      loadingOverlay.style.display = 'none';
+      accessCodeEl.focus();
+    }
 
     if (!secret) {
       accessCodeEl.disabled = true;
@@ -429,8 +437,8 @@
       unlockMsgEl.textContent = '请通过正确的链接访问';
       loadingOverlay.style.display = 'none';
     } else {
-      loadingOverlay.style.display = 'none';
-      accessCodeEl.focus();
+      // 先静默尝试：有效期内重新打开无需输入访问码
+      load();
     }
 
     let lastSaved = '';
@@ -480,25 +488,27 @@
       unsavedTimer = setTimeout(markUnsaved, 300);
     });
 
-    // 加载内容
+    // 加载内容（授权通过 checkAuth 校验，靠 cookie 免输访问码）
     async function load() {
-      if (!secret || !accessCode) return;
+      if (!secret) return;
       try {
         const res = await fetch('/api/get', {
           headers: {
-            'X-Clip-Secret': secret,
-            'X-Clip-Code': accessCode
+            'X-Clip-Secret': secret
           }
         });
         if (res.status === 403) {
-          throw new Error('forbidden');
+          showUnlock();
+          return;
         }
         if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
+          showUnlock('加载失败，请刷新重试');
+          return;
         }
         const data = await res.json();
         unlockPanel.hidden = true;
         editorPanel.hidden = false;
+        everLoaded = true;
         contentEl.value = data.content || '';
         lastSaved = contentEl.value;
         updateStats();
@@ -518,19 +528,32 @@
         return;
       }
 
-      accessCode = code;
       unlockMsgEl.textContent = '';
       unlockBtn.disabled = true;
       unlockBtn.textContent = '验证中...';
 
       try {
-        await load();
-      } catch (err) {
-        accessCode = '';
-        if (err.message === 'forbidden') {
+        const res = await fetch('/api/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Clip-Secret': secret
+          },
+          body: JSON.stringify({ code })
+        });
+        if (!res.ok) {
           unlockMsgEl.textContent = '访问码或链接密钥无效';
           return;
         }
+        // 之前加载过说明只是授权过期，不重新拉取以免覆盖未保存内容
+        if (everLoaded) {
+          unlockPanel.hidden = true;
+          editorPanel.hidden = false;
+          contentEl.focus();
+        } else {
+          await load();
+        }
+      } catch (err) {
         unlockMsgEl.textContent = '加载失败';
       } finally {
         unlockBtn.disabled = false;
@@ -541,7 +564,7 @@
     // 保存
     let saving = false;
     saveBtn.addEventListener('click', async () => {
-      if (!secret || !accessCode || saving) return;
+      if (!secret || saving) return;
       saving = true;
       saveBtn.disabled = true;
       try {
@@ -549,13 +572,12 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Clip-Secret': secret,
-            'X-Clip-Code': accessCode
+            'X-Clip-Secret': secret
           },
           body: JSON.stringify({ content: contentEl.value })
         });
         if (res.status === 403) {
-          showMsg('访问码或链接密钥无效', true);
+          showUnlock('访问已过期，请重新输入访问码');
         } else if (!res.ok) {
           showMsg('保存失败: HTTP ' + res.status, true);
         } else {
@@ -594,7 +616,7 @@
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        if (secret && accessCode) saveBtn.click();
+        if (secret) saveBtn.click();
       }
     });
 
@@ -604,7 +626,7 @@
       clearTimeout(pasteTimer);
       pasteTimer = setTimeout(() => {
         updateStats();
-        if (secret && accessCode) saveBtn.click();
+        if (secret) saveBtn.click();
       }, 300);
     });
   </script>

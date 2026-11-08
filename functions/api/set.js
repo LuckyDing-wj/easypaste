@@ -1,8 +1,9 @@
-export async function onRequestPost(context) {
-  const secret = context.request.headers.get("X-Clip-Secret");
-  const code = context.request.headers.get("X-Clip-Code");
+import { checkAuth } from './_auth.js';
 
-  if (!secret || !code || secret !== context.env.CLIP_SECRET || code !== context.env.CLIP_CODE) {
+export async function onRequestPost(context) {
+  const auth = await checkAuth(context.env, context.request);
+
+  if (!auth.ok) {
     return new Response("Forbidden", { status: 403 });
   }
 
@@ -19,9 +20,11 @@ export async function onRequestPost(context) {
 
     const data = JSON.stringify({ content, updatedAt: new Date().toISOString() });
     await context.env.CLIP_KV.put("clipboard", data);
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
+
+    const headers = { "Content-Type": "application/json" };
+    if (auth.refresh) headers["Set-Cookie"] = auth.refresh;
+
+    return new Response(JSON.stringify({ ok: true }), { headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: "Bad Request" }), {
       status: 400,

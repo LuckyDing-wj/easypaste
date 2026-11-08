@@ -7,6 +7,7 @@
 - 收藏一个链接，打开就能粘贴和读取文本内容
 - 换个设备打开同一个链接，也能看到之前保存的内容
 - 打开页面后需要输入访问码，验证通过才会加载内容
+- 解锁一次后 7 天内同一浏览器免输访问码，每次使用自动续期（有效期在 `functions/api/_auth.js` 的 `TTL_DAYS` 修改）
 - 每次保存会覆盖之前的内容（只保留最新的一条）
 - 浅色纸面风格，暖橙色主操作，长时间编辑更耐看
 - 支持 Ctrl+S 快捷保存
@@ -22,7 +23,9 @@ easypaste/
 ├── functions/                 # 后端 API（Cloudflare 自动运行）
 │   └── api/
 │       ├── get.js             # 读取剪切板内容的接口
-│       └── set.js             # 保存剪切板内容的接口
+│       ├── set.js             # 保存剪切板内容的接口
+│       ├── verify.js          # 校验访问码并签发免输访问码 cookie 的接口
+│       └── _auth.js           # 授权校验与 cookie 续期（下划线开头，不作为路由）
 ├── package.json               # 项目信息
 ├── package-lock.json          # npm 锁文件
 ├── wrangler.toml              # Cloudflare 配置文件

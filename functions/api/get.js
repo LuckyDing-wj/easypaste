@@ -1,8 +1,9 @@
-export async function onRequest(context) {
-  const secret = context.request.headers.get("X-Clip-Secret");
-  const code = context.request.headers.get("X-Clip-Code");
+import { checkAuth } from './_auth.js';
 
-  if (!secret || !code || secret !== context.env.CLIP_SECRET || code !== context.env.CLIP_CODE) {
+export async function onRequest(context) {
+  const auth = await checkAuth(context.env, context.request);
+
+  if (!auth.ok) {
     return new Response("Forbidden", { status: 403 });
   }
 
@@ -21,9 +22,10 @@ export async function onRequest(context) {
       }
     }
 
-    return new Response(JSON.stringify({ content, updatedAt }), {
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    });
+    const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+    if (auth.refresh) headers["Set-Cookie"] = auth.refresh;
+
+    return new Response(JSON.stringify({ content, updatedAt }), { headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 500,
