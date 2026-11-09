@@ -1,2 +1,9 @@
 name = "easypaste"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-01-01"
+pages_build_output_dir = "public"
+
+# 启用本文件后绑定类设置以文件为准（dashboard 对应项变为只读）。
+# id 在 Cloudflare dashboard → Workers & Pages → KV → easypaste-kv 页面复制填入。
+[[kv_namespaces]]
+binding = "CLIP_KV"
+id = "<在 dashboard 复制 namespace id 后填入>"

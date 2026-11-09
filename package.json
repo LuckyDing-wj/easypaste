@@ -1,7 +1,12 @@
 {
   "name": "easypaste",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "npx wrangler pages dev public --kv CLIP_KV"
+    "dev": "wrangler pages dev public --kv CLIP_KV",
+    "test": "node --test test/"
+  },
+  "devDependencies": {
+    "wrangler": "^4.158.0"
   }
 }

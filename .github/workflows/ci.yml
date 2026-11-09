@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: 语法检查
+        run: |
+          for f in functions/api/*.js public/assets/*.js; do
+            node --check "$f"
+          done
+      - name: 单元测试
+        run: node --test test/

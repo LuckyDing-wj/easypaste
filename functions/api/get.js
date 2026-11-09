@@ -1,10 +1,11 @@
 import { checkAuth } from './_auth.js';
+import { json } from './_headers.js';
 
-export async function onRequest(context) {
+export async function onRequestGet(context) {
   const auth = await checkAuth(context.env, context.request);
 
   if (!auth.ok) {
-    return new Response("Forbidden", { status: 403 });
+    return json({ error: 'Forbidden' }, 403);
   }
 
   try {
@@ -18,18 +19,14 @@ export async function onRequest(context) {
         content = data.content || "";
         updatedAt = data.updatedAt || null;
       } catch {
-        content = raw;
+        content = raw; // 兼容历史遗留的非 JSON 数据
       }
     }
 
-    const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
-    if (auth.refresh) headers["Set-Cookie"] = auth.refresh;
-
-    return new Response(JSON.stringify({ content, updatedAt }), { headers });
+    const extra = auth.refresh ? { "Set-Cookie": auth.refresh } : {};
+    return json({ content, updatedAt }, 200, extra);
   } catch (e) {
-    return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("KV get failed:", e);
+    return json({ error: "Internal error" }, 500);
   }
 }
